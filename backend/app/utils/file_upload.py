@@ -1,8 +1,13 @@
 import os
 from werkzeug.utils import secure_filename
 from flask import current_app
-from PIL import Image
 import uuid
+
+try:
+    from PIL import Image
+    PIL_AVAILABLE = True
+except ImportError:
+    PIL_AVAILABLE = False
 
 def allowed_file(filename, allowed_extensions=None):
     """Check if file extension is allowed"""
@@ -47,6 +52,9 @@ def save_file(file, folder='uploads', subfolder=None):
 def save_image(file, folder='images', max_size=(1920, 1080), thumbnail_size=(300, 300)):
     """Save image with resizing and thumbnail"""
     try:
+        if not PIL_AVAILABLE:
+            return None, None, "Pillow no está instalado. Ejecuta: pip install Pillow"
+
         if not file or not allowed_file(file.filename, {'png', 'jpg', 'jpeg'}):
             return None, None, "Invalid image type"
         

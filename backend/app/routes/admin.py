@@ -1,26 +1,11 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models.user import User
 from app.models.preficha import Preficha
 from app.models.teacher import Teacher
+from app.models.project import Project
+from app.middleware.auth_middleware import admin_required
 
 admin_bp = Blueprint('admin', __name__)
-
-def admin_required():
-    """Decorator to check if user is admin"""
-    def wrapper(fn):
-        @jwt_required()
-        def decorator(*args, **kwargs):
-            current_user_id = get_jwt_identity()
-            user = User.query.get(current_user_id)
-            
-            if not user or user.role != 'admin':
-                return jsonify({'error': 'Admin access required'}), 403
-            
-            return fn(*args, **kwargs)
-        decorator.__name__ = fn.__name__
-        return decorator
-    return wrapper
 
 @admin_bp.route('/dashboard', methods=['GET'])
 @admin_required()

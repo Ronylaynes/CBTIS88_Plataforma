@@ -1,108 +1,100 @@
-import { apiService } from './api'
+import axios from 'axios'
 
-export const prefichaService = {
-  // Create preficha
-  createPreficha: async (prefichaData) => {
-    try {
-      const response = await apiService.post('/prefichas', prefichaData)
-      return response.data
-    } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error al crear preficha')
-    }
-  },
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
-  // Get preficha by ID
-  getPrefichaById: async (id) => {
-    try {
-      const response = await apiService.get(`/prefichas/${id}`)
-      return response.data
-    } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error al obtener preficha')
-    }
-  },
+const api = axios.create({
+  baseURL: API_URL,
+  headers: { 'Content-Type': 'application/json' },
+})
 
-  // Get preficha by folio
-  getPrefichaByFolio: async (folio) => {
-    try {
-      const response = await apiService.get(`/prefichas/folio/${folio}`)
-      return response.data
-    } catch (error) {
-      throw new Error(error.response?.data?.message || 'Preficha no encontrada')
-    }
-  },
+// Interceptor — agrega token JWT automáticamente
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token')
+  if (token) config.headers.Authorization = `Bearer ${token}`
+  return config
+})
 
-  // Get all prefichas (admin)
-  getAllPrefichas: async (filters = {}) => {
-    try {
-      const response = await apiService.get('/prefichas', { params: filters })
-      return response.data
-    } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error al obtener prefichas')
+// Interceptor — manejo global de errores
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token')
+      window.location.href = '/login'
     }
-  },
-
-  // Update preficha
-  updatePreficha: async (id, prefichaData) => {
-    try {
-      const response = await apiService.put(`/prefichas/${id}`, prefichaData)
-      return response.data
-    } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error al actualizar preficha')
-    }
-  },
-
-  // Delete preficha
-  deletePreficha: async (id) => {
-    try {
-      const response = await apiService.delete(`/prefichas/${id}`)
-      return response.data
-    } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error al eliminar preficha')
-    }
-  },
-
-  // Update payment status
-  updatePaymentStatus: async (id, paymentData) => {
-    try {
-      const response = await apiService.patch(`/prefichas/${id}/payment`, paymentData)
-      return response.data
-    } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error al actualizar pago')
-    }
-  },
-
-  // Upload payment proof
-  uploadPaymentProof: async (id, file) => {
-    try {
-      const formData = new FormData()
-      formData.append('paymentProof', file)
-      
-      const response = await apiService.post(`/prefichas/${id}/payment-proof`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      })
-      return response.data
-    } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error al subir comprobante')
-    }
-  },
-
-  // Get statistics
-  getStatistics: async () => {
-    try {
-      const response = await apiService.get('/prefichas/statistics')
-      return response.data
-    } catch (error) {
-      throw new Error(error.response?.data?.message || 'Error al obtener estadísticas')
-    }
-  },
-
-  // Validate CURP
-  validateCURP: async (curp) => {
-    try {
-      const response = await apiService.post('/prefichas/validate-curp', { curp })
-      return response.data
-    } catch (error) {
-      throw new Error(error.response?.data?.message || 'CURP inválido')
-    }
+    return Promise.reject(error)
   }
+)
+
+// ── Prefichas ──────────────────────────────────────────────
+export const prefichaService = {
+  createPreficha: async (payload) => {
+    const { data } = await api.post('/api/prefichas', payload)
+    return data
+  },
+}
+
+// ── Reporte genérico ───────────────────────────────────────
+export const obtenerReportePrefichas = async () => {
+  const { data } = await api.get('/api/prefichas/reporte')
+  return data
+}
+
+export const descargarReporte = async (formato) => {
+  const mimeTypes = {
+    excel: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    pdf:   'application/pdf',
+    csv:   'text/csv',
+  }
+  const response = await api.get(`/api/prefichas/reporte/${formato}`, {
+    responseType: 'blob',
+  })
+  const url  = window.URL.createObjectURL(
+    new Blob([response.data], { type: mimeTypes[formato] })
+  )
+  const link = document.createElement('a')
+  link.href  = url
+  link.setAttribute('download',
+    `reporte_prefichas.${formato === 'excel' ? 'xlsx' : formato}`)
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(url)
+}
+
+// ── Foto ───────────────────────────────────────────────────
+export const guardarFoto = async (prefichaId, fotoBase64) => {
+  const { data } = await api.post(`/api/prefichas/${prefichaId}/foto`, {
+    foto_base64: fotoBase64,
+  })
+  return data
+}
+
+export const obtenerFoto = async (prefichaId) => {
+  const { data } = await api.get(`/api/prefichas/${prefichaId}/foto`)
+  return data.foto_base64
+}
+
+// ════════════════════════════════════════════════════════════
+//  NUEVO — Descargar relación de aspirantes en Excel
+//  Solo admin y servicios_escolares
+// ════════════════════════════════════════════════════════════
+export const descargarExcelAspirantes = async () => {
+  const response = await api.get('/api/prefichas/reporte/excel', {
+    responseType: 'blob',
+  })
+
+  const fecha = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+  const url   = window.URL.createObjectURL(
+    new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+  )
+  const link  = document.createElement('a')
+  link.href   = url
+  link.setAttribute('download', `relacion_aspirantes_${fecha}.xlsx`)
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(url)
 }

@@ -1,0 +1,21 @@
+ # Python / Backend
+backend/.venv/
+backend/venv/
+backend/__pycache__/
+backend/app/__pycache__/
+backend/**/__pycache__/
+backend/*.pyc
+backend/.env
+backend/instance/
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.save
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.log

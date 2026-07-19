@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import api from '@services/api'
 
 export const useFetch = (url, options = {}) => {
   const [data, setData] = useState(null)
@@ -11,7 +11,7 @@ export const useFetch = (url, options = {}) => {
       setLoading(true)
       setError(null)
 
-      const response = await axios({
+      const response = await api({
         url,
         method: options.method || 'GET',
         data: options.data,

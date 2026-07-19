@@ -9,12 +9,6 @@ const ServicesList = () => {
       items: ['Inscripción', 'Reinscripción', 'Cambio de especialidad', 'Baja temporal']
     },
     {
-      icon: <FaCreditCard size={40} />,
-      title: 'Servicios de Pago',
-      description: 'Información sobre colegiaturas y métodos de pago.',
-      items: ['Colegiaturas', 'Credenciales', 'Seguros escolares', 'Material didáctico']
-    },
-    {
       icon: <FaCertificate size={40} />,
       title: 'Documentación',
       description: 'Solicitud de certificados y constancias.',

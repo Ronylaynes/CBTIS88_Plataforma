@@ -1,5 +1,5 @@
 from app import ma
-from ..models.project import Project
+from app.models.project import Project
 from marshmallow import fields, validates, ValidationError  # type: ignore
 
 class ProjectSchema(ma.SQLAlchemyAutoSchema):

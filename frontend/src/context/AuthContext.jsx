@@ -31,9 +31,9 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials) => {
     try {
       const response = await authService.login(credentials)
-      const { token, user: userData } = response
+      const { access_token, user: userData } = response
       
-      localStorage.setItem('token', token)
+      localStorage.setItem('token', access_token)
       setUser(userData)
       setIsAuthenticated(true)
       

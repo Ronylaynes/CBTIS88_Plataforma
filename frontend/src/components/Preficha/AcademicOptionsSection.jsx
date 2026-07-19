@@ -1,10 +1,12 @@
 const AcademicOptionsSection = ({ formData, updateFormData }) => {
   const especialidades = [
     'Programación',
-    'Electrónica',
-    'Administración de Recursos Humanos',
-    'Contabilidad',
-    'Mecatrónica'
+    'mecanica industrial',
+    'electricidad',
+    'mecatronica',
+    'ciberciberseguridad',
+    'gestion e inovacion turistica',
+    'inteligencia artificial'
   ]
 
   return (
@@ -21,15 +23,10 @@ const AcademicOptionsSection = ({ formData, updateFormData }) => {
 
       <div className="space-y-6">
         <div>
-          <label className="block text-neutral-700 font-medium mb-2">
-            Opción 1 - Especialidad *
-          </label>
-          <select
-            value={formData.opcion1}
+          <label className="block text-neutral-700 font-medium mb-2">Opción 1 - Especialidad *</label>
+          <select value={formData.opcion1}
             onChange={(e) => updateFormData('opcion1', e.target.value)}
-            className="input-field"
-            required
-          >
+            className="input-field" required>
             <option value="">Selecciona tu primera opción</option>
             {especialidades.map((esp) => (
               <option key={esp} value={esp}>{esp}</option>
@@ -37,28 +34,21 @@ const AcademicOptionsSection = ({ formData, updateFormData }) => {
           </select>
         </div>
 
+        {/* ✅ Corregido: opcion1Especialidad estaba undefined en PrefichaForm */}
         <div>
-          <label className="block text-neutral-700 font-medium mb-2">
-            Opción 1 - Detalles de Especialidad
-          </label>
-          <input
-            type="text"
-            value={formData.opcion1Especialidad}
+          <label className="block text-neutral-700 font-medium mb-2">Opción 1 - Detalles de Especialidad</label>
+          <input type="text"
+            value={formData.opcion1Especialidad || ''}
             onChange={(e) => updateFormData('opcion1Especialidad', e.target.value)}
             className="input-field"
-            placeholder="Información adicional sobre tu elección"
-          />
+            placeholder="Información adicional sobre tu elección" />
         </div>
 
         <div>
-          <label className="block text-neutral-700 font-medium mb-2">
-            Opción 2 - Especialidad
-          </label>
-          <select
-            value={formData.opcion2}
+          <label className="block text-neutral-700 font-medium mb-2">Opción 2 - Especialidad</label>
+          <select value={formData.opcion2}
             onChange={(e) => updateFormData('opcion2', e.target.value)}
-            className="input-field"
-          >
+            className="input-field">
             <option value="">Selecciona tu segunda opción</option>
             {especialidades.filter(e => e !== formData.opcion1).map((esp) => (
               <option key={esp} value={esp}>{esp}</option>
@@ -67,14 +57,10 @@ const AcademicOptionsSection = ({ formData, updateFormData }) => {
         </div>
 
         <div>
-          <label className="block text-neutral-700 font-medium mb-2">
-            Opción 3 - Especialidad
-          </label>
-          <select
-            value={formData.opcion3}
+          <label className="block text-neutral-700 font-medium mb-2">Opción 3 - Especialidad</label>
+          <select value={formData.opcion3}
             onChange={(e) => updateFormData('opcion3', e.target.value)}
-            className="input-field"
-          >
+            className="input-field">
             <option value="">Selecciona tu tercera opción</option>
             {especialidades.filter(e => e !== formData.opcion1 && e !== formData.opcion2).map((esp) => (
               <option key={esp} value={esp}>{esp}</option>

@@ -20,7 +20,7 @@ const Teachers = () => {
         <div className="container-custom max-w-5xl">
           <h2 className="section-title">Mensaje del Director</h2>
           <DirectorProfile
-            name="Dr. José Luis Hernández García"
+            name="Ángel Antonio Zavala Morales"
             position="Director del CBTIS No. 88"
             message="Es un honor liderar esta institución que durante más de 30 años ha formado profesionales técnicos de excelencia. Nuestro compromiso es brindar educación de calidad, actualizada y pertinente para los desafíos del siglo XXI. Invitamos a todos los jóvenes con deseos de superación a formar parte de nuestra comunidad educativa."
           />

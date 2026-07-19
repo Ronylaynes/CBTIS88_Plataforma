@@ -11,7 +11,7 @@ const Home = () => {
         {/* Efecto de luz de fondo */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-red-900/40 via-[#5D0A1F] to-[#5D0A1F] -z-10"></div>
         
-        <h1 className="text-5xl md:text-6xl font-bold mb-4">
+        <h1 className="text-5xl md:text-6xl font-bold mb-4 text-white">
           Bienvenido al <span className="text-[#C59B40]">CBTIS No. 88</span>
         </h1>
         <p className="text-gray-300 text-lg max-w-2xl mx-auto font-light">
