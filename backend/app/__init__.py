@@ -28,12 +28,12 @@ def create_app(config_name='development'):
     db.init_app(app)
     migrate.init_app(app, db)
 
-    # ✅ CORS actualizado con tu dominio devtunnels
+    # ✅ CORS con URLs de producción y desarrollo
     CORS(app,
          origins=[
              "http://localhost:3000",
              "http://localhost:5173",
-             "https://sb64sm5n-5173.usw3.devtunnels.ms"
+             "https://cbtis-88-plataforma.vercel.app"
          ],
          supports_credentials=True,
          allow_headers=["Content-Type", "Authorization"],
