@@ -1,9 +1,10 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 
 const FotoSection = ({ formData, updateFormData }) => {
-  const [camaraActiva, setCamaraActiva]   = useState(false)
-  const [fotoPreview, setFotoPreview]     = useState(formData.foto_base64 || null)
-  const [error, setError]                 = useState(null)
+  const [camaraActiva, setCamaraActiva] = useState(false)
+  const [camaraLista,  setCamaraLista]  = useState(false)
+  const [fotoPreview,  setFotoPreview]  = useState(formData.foto_base64 || null)
+  const [error,        setError]        = useState(null)
 
   const videoRef  = useRef(null)
   const canvasRef = useRef(null)
@@ -12,15 +13,53 @@ const FotoSection = ({ formData, updateFormData }) => {
   // ── Cámara ────────────────────────────────────────
   const activarCamara = async () => {
     setError(null)
+    setCamaraLista(false)
+
+    // getUserMedia requiere contexto seguro (HTTPS o localhost).
+    // Si el sitio se abre por HTTP en producción, el navegador
+    // ni siquiera expone mediaDevices y la cámara "no hace nada".
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setError(
+        'Tu navegador no permite el acceso a la cámara en este sitio ' +
+        '(verifica que la dirección empiece con https://). ' +
+        'Puedes usar la opción "Subir foto" en su lugar.'
+      )
+      return
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: 640, height: 480, facingMode: 'user' }
       })
       streamRef.current = stream
-      if (videoRef.current) videoRef.current.srcObject = stream
       setCamaraActiva(true)
-    } catch {
-      setError('No se pudo acceder a la cámara. Verifica los permisos del navegador.')
+
+      // videoRef.current aún puede no existir en este mismo tick
+      // porque el <video> se monta cuando camaraActiva pasa a true.
+      requestAnimationFrame(() => {
+        const video = videoRef.current
+        if (!video) return
+        video.srcObject = stream
+        video.onloadedmetadata = () => {
+          video.play().catch(() => {
+            // Algunos navegadores móviles bloquean el autoplay;
+            // igual dejamos camaraLista en true porque el usuario
+            // puede tocar el video para reproducir.
+          })
+          setCamaraLista(true)
+        }
+      })
+    } catch (err) {
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setError('Debes permitir el acceso a la cámara desde la configuración del navegador para poder tomar la foto.')
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        setError('No se detectó ninguna cámara en este dispositivo. Usa la opción "Subir foto".')
+      } else if (err.name === 'NotReadableError') {
+        setError('La cámara está siendo usada por otra aplicación. Ciérrala e intenta de nuevo.')
+      } else {
+        setError('No se pudo acceder a la cámara. Intenta con "Subir foto" en su lugar.')
+      }
+      setCamaraActiva(false)
     }
   }
 
@@ -30,12 +69,23 @@ const FotoSection = ({ formData, updateFormData }) => {
       streamRef.current = null
     }
     setCamaraActiva(false)
+    setCamaraLista(false)
   }, [])
+
+  // Apaga la cámara si el usuario abandona este paso sin capturar,
+  // para no dejar el LED de la cámara encendido innecesariamente.
+  useEffect(() => {
+    return () => detenerCamara()
+  }, [detenerCamara])
 
   const tomarFoto = () => {
     const canvas = canvasRef.current
     const video  = videoRef.current
-    if (!canvas || !video) return
+
+    if (!canvas || !video || !video.videoWidth) {
+      setError('La cámara todavía se está preparando. Espera un segundo e intenta de nuevo.')
+      return
+    }
 
     canvas.width  = video.videoWidth
     canvas.height = video.videoHeight
@@ -158,13 +208,19 @@ const FotoSection = ({ formData, updateFormData }) => {
                   autoPlay
                   playsInline
                   muted
-                  className="w-80 h-60 object-cover"
+                  className="w-80 h-60 object-cover bg-black"
                 />
                 <div className="absolute inset-0 flex items-center justify-center
                                 pointer-events-none">
                   <div className="w-36 h-44 border-2 border-white border-dashed
                                   rounded-full opacity-60" />
                 </div>
+                {!camaraLista && (
+                  <div className="absolute inset-0 flex items-center justify-center
+                                  bg-black/40 text-white text-sm">
+                    Preparando cámara…
+                  </div>
+                )}
               </div>
 
               <p className="text-xs text-gray-500">
@@ -175,8 +231,10 @@ const FotoSection = ({ formData, updateFormData }) => {
                 <button
                   type="button"
                   onClick={tomarFoto}
+                  disabled={!camaraLista}
                   className="px-6 py-3 bg-primary-500 text-white rounded-lg
-                             font-medium hover:bg-primary-600 transition"
+                             font-medium hover:bg-primary-600 transition
+                             disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   📸 Capturar foto
                 </button>

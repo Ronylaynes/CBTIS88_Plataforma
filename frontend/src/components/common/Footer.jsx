@@ -46,6 +46,10 @@ const Footer = () => {
                 ['/actividades-academicas', 'Actividades Académicas'],
                 ['/transparencia',          'Transparencia'],
                 ['/preficha',               'Preinscripción'],
+                // ✅ Nuevo: acceso para el personal administrativo
+                // (Servicios Escolares / Dirección) a la descarga
+                // de la relación de aspirantes con preficha.
+                ['/admin',                  'Panel Administrativo'],
               ].map(([path, label]) => (
                 <li key={path}>
                   <Link
