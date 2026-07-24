@@ -5,6 +5,7 @@ import ContactSection from './ContactSection'
 import AcademicOptionsSection from './AcademicOptionsSection'
 import FotoSection from './FotoSection'
 import { prefichaService } from '@services/prefichaService'
+import { apiService } from '@services/api'
 
 const CURP_REGEX = /^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9]{2}$/
 
@@ -159,15 +160,15 @@ const PrefichaForm = () => {
     }
   }
 
+  // ── Descarga de PDF ───────────────────────────────────────────
+  // Antes: usaba fetch() con "http://localhost:5000" hardcodeado, lo cual
+  // solo funcionaba en desarrollo local. Ahora usa el mismo servicio de
+  // Axios (api.js) que ya respeta VITE_API_URL en producción y agrega
+  // automáticamente el token de autenticación si existe.
   const handleDescargarPDF = async () => {
     try {
-      const token    = localStorage.getItem('token')
-      const response = await fetch(
-        `http://localhost:5000/api/prefichas/pdf/${folioGenerado}`,
-        token ? { headers: { Authorization: `Bearer ${token}` } } : {}
-      )
-      const blob = await response.blob()
-      const url  = window.URL.createObjectURL(blob)
+      const response = await apiService.download(`/prefichas/pdf/${folioGenerado}`)
+      const url  = window.URL.createObjectURL(new Blob([response.data]))
       const link = document.createElement('a')
       link.href  = url
       link.setAttribute('download', `preficha_${folioGenerado}.pdf`)
