@@ -298,7 +298,7 @@ const PrefichaForm = () => {
 
             <form onSubmit={handleSubmit} className="card mt-6 md:mt-8">
               {currentStep === 1 && (
-                <PersonalDataSection formData={formData} updateFormData={updateFormData} />
+                <PersonalDataSection formData={formData} updateFormData={updateFormData} years={years} />
               )}
               {currentStep === 2 && (
                 <ContactSection formData={formData} updateFormData={updateFormData} />

@@ -1,4 +1,4 @@
-const PersonalDataSection = ({ formData, updateFormData }) => {
+const PersonalDataSection = ({ formData, updateFormData, years }) => {
   return (
     <div>
       <h2 className="text-2xl font-bold text-primary-500 mb-6">
@@ -76,14 +76,16 @@ const PersonalDataSection = ({ formData, updateFormData }) => {
             ))}
           </select>
 
+          {/* Antes: solo generaba 10 años (edad actual - 14 hacia atrás), por
+              eso no aparecía 2001 ni se podía bajar de cierto año. Ahora usa
+              el arreglo "years" (1990-2050) que viene de PrefichaForm. */}
           <select value={formData.fechaNacimiento.año}
             onChange={(e) => updateFormData('fechaNacimiento', { ...formData.fechaNacimiento, año: e.target.value })}
             className="input-field" required>
             <option value="">AÑO</option>
-            {[...Array(10)].map((_, i) => {
-              const year = new Date().getFullYear() - 14 - i
-              return <option key={year} value={year}>{year}</option>
-            })}
+            {years.map((year) => (
+              <option key={year} value={year}>{year}</option>
+            ))}
           </select>
         </div>
       </div>
