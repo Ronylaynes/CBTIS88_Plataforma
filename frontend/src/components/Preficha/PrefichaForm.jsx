@@ -8,6 +8,7 @@ import { prefichaService } from '@services/prefichaService'
 import { apiService } from '@services/api'
 
 const CURP_REGEX = /^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9]{2}$/
+const years = Array.from({ length: 2050 - 1990 + 1 }, (_, i) => 2050 - i)
 
 const initialFormData = {
   apellidoPaterno:     '',
