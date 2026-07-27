@@ -6,7 +6,9 @@ def validate_email(email):
     return re.match(pattern, email) is not None
 
 def validate_curp(curp):
-    pattern = r'^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9]{2}$'
+    # ✅ Patrón oficial CURP México
+    # Último dígito puede ser letra O número
+    pattern = r'^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[A-Z0-9]{2}$'
     return re.match(pattern, curp) is not None
 
 def validate_phone(phone):
@@ -49,6 +51,8 @@ def validate_preficha(data):
         errors['nombre'] = 'Nombre is required'
     if not data.get('curp'):
         errors['curp'] = 'CURP is required'
+    elif not validate_curp(data['curp']):
+        errors['curp'] = 'CURP inválida (formato incorrecto)'
     if not data.get('correo_electronico'):
         errors['correo_electronico'] = 'Email is required'
     elif not validate_email(data['correo_electronico']):
@@ -59,5 +63,5 @@ def validate_preficha(data):
         errors['telefono_tutor'] = 'Invalid phone format (10 digits)'
     if not data.get('opcion1'):
         errors['opcion1'] = 'First specialty option is required'
-    # ✅ metodo_pago eliminado — ya no se valida
+    # ✅ metodo_pago eliminado
     return len(errors) == 0, errors
