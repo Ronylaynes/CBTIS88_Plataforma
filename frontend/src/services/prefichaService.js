@@ -1,20 +1,20 @@
 import axios from 'axios'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+// ✅ Sin /api al final — se agrega en cada llamada
+const API_URL = import.meta.env.VITE_API_URL?.replace('/api', '') ||
+                'http://localhost:5000'
 
 const api = axios.create({
   baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
 })
 
-// Interceptor — agrega token JWT automáticamente
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
 
-// Interceptor — manejo global de errores
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -75,23 +75,19 @@ export const obtenerFoto = async (prefichaId) => {
   return data.foto_base64
 }
 
-// ════════════════════════════════════════════════════════════
-//  NUEVO — Descargar relación de aspirantes en Excel
-//  Solo admin y servicios_escolares
-// ════════════════════════════════════════════════════════════
+// ── Descargar Excel aspirantes ─────────────────────────────
 export const descargarExcelAspirantes = async () => {
   const response = await api.get('/api/prefichas/reporte/excel', {
     responseType: 'blob',
   })
-
   const fecha = new Date().toISOString().slice(0, 10).replace(/-/g, '')
   const url   = window.URL.createObjectURL(
     new Blob([response.data], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     })
   )
-  const link  = document.createElement('a')
-  link.href   = url
+  const link = document.createElement('a')
+  link.href  = url
   link.setAttribute('download', `relacion_aspirantes_${fecha}.xlsx`)
   document.body.appendChild(link)
   link.click()
