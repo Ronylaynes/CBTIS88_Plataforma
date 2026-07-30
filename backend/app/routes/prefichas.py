@@ -10,6 +10,20 @@ prefichas_bp = Blueprint('prefichas', __name__)
 
 ROLES_REPORTE = ['admin', 'servicios_escolares']
 
+
+def _valor_enum_o_str(campo, default='—'):
+    """
+    Devuelve el valor legible de un campo que puede venir como
+    Enum (con atributo .value) o como string plano — el modelo
+    actual de Preficha usa db.String, así que esto evita que
+    truene con AttributeError si algún día cambia a Enum, o
+    viceversa.
+    """
+    if campo is None or campo == '':
+        return default
+    return campo.value if hasattr(campo, 'value') else campo
+
+
 # ════════════════════════════════════════════════════════════
 #  CRUD BÁSICO
 # ════════════════════════════════════════════════════════════
@@ -196,8 +210,7 @@ def descargar_pdf_preficha(folio):
         ['Fecha nacimiento',
          str(preficha.fecha_nacimiento)
          if preficha.fecha_nacimiento else '—'],
-        ['Sexo',
-         preficha.sexo.value if preficha.sexo else '—'],
+        ['Sexo',              _valor_enum_o_str(preficha.sexo)],
         ['II. CONTACTO', ''],
         ['Correo',            preficha.email    or '—'],
         ['Teléfono',          preficha.telefono or '—'],
@@ -214,9 +227,7 @@ def descargar_pdf_preficha(folio):
          str(preficha.promedio_egreso)
          if preficha.promedio_egreso else '—'],
         ['IV. ESTATUS', ''],
-        ['Status',
-         preficha.status.value
-         if preficha.status else 'pendiente'],
+        ['Status',            _valor_enum_o_str(preficha.status, 'pendiente')],
         ['Observaciones',     preficha.observaciones or '—'],
     ]
 
@@ -384,7 +395,7 @@ def descargar_excel_prefichas():
             p.nombre_completo   or '—',
             str(p.fecha_nacimiento)
             if p.fecha_nacimiento else '—',
-            p.sexo.value        if p.sexo   else '—',
+            _valor_enum_o_str(p.sexo),
             p.telefono          or '—',
             p.email             or '—',
             p.direccion         or '—',
@@ -394,7 +405,7 @@ def descargar_excel_prefichas():
             p.secundaria_nombre or '—',
             float(p.promedio_egreso)
             if p.promedio_egreso else '—',
-            p.status.value      if p.status else 'pendiente',
+            _valor_enum_o_str(p.status, 'pendiente'),
             str(p.created_at)[:10]
             if p.created_at else '—',
         ]
@@ -463,7 +474,7 @@ def descargar_csv_prefichas():
             p.nombre_completo   or '',
             str(p.fecha_nacimiento)
             if p.fecha_nacimiento else '',
-            p.sexo.value        if p.sexo   else '',
+            _valor_enum_o_str(p.sexo, ''),
             p.telefono          or '',
             p.email             or '',
             p.direccion         or '',
@@ -473,7 +484,7 @@ def descargar_csv_prefichas():
             p.secundaria_nombre or '',
             float(p.promedio_egreso)
             if p.promedio_egreso else '',
-            p.status.value      if p.status else 'pendiente',
+            _valor_enum_o_str(p.status, 'pendiente'),
             str(p.created_at)[:10]
             if p.created_at else '',
         ])
