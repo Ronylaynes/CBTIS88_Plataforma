@@ -7,6 +7,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
+from sqlalchemy.exc import IntegrityError
 from app import db
 
 
@@ -44,9 +45,38 @@ class PrefichaController:
             db.session.add(preficha)
             db.session.commit()
             return {"mensaje": "Preficha creada exitosamente", "preficha": {"folio": preficha.folio}}, 201
-        except Exception as e:
+
+        except IntegrityError as e:
+            # Error de datos duplicados (CURP o folio ya existentes).
+            # Nunca se expone el SQL crudo ni los parámetros al cliente.
             db.session.rollback()
-            return {"error": str(e)}, 500
+            mensaje_error = str(e.orig).lower() if getattr(e, "orig", None) else str(e).lower()
+
+            if "curp" in mensaje_error:
+                return {
+                    "error": "Ya existe una preficha registrada con esa CURP. "
+                             "Si crees que esto es un error, contacta a Servicios Escolares."
+                }, 400
+            if "folio" in mensaje_error:
+                return {
+                    "error": "Ocurrió un problema generando tu folio. Intenta enviar la solicitud de nuevo."
+                }, 400
+
+            # Duplicado no identificado específicamente: mensaje genérico, sin detalles técnicos.
+            return {
+                "error": "Ya existe un registro con datos duplicados. Verifica tu información e intenta de nuevo."
+            }, 400
+
+        except Exception as e:
+            # Cualquier otro error inesperado: se registra en el log del
+            # servidor (para que aparezca en Railway) pero al cliente solo
+            # se le manda un mensaje genérico, sin SQL ni datos internos.
+            db.session.rollback()
+            import logging
+            logging.exception("Error inesperado al crear preficha")
+            return {
+                "error": "Ocurrió un error al procesar tu solicitud. Intenta de nuevo en unos minutos."
+            }, 500
 
     @staticmethod
     def get_all_prefichas(page, per_page, filters):
