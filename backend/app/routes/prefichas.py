@@ -10,19 +10,11 @@ prefichas_bp = Blueprint('prefichas', __name__)
 
 ROLES_REPORTE = ['admin', 'servicios_escolares']
 
-
-def _valor_enum_o_str(campo, default='—'):
-    """
-    Devuelve el valor legible de un campo que puede venir como
-    Enum (con atributo .value) o como string plano — el modelo
-    actual de Preficha usa db.String, así que esto evita que
-    truene con AttributeError si algún día cambia a Enum, o
-    viceversa.
-    """
-    if campo is None or campo == '':
+# ── helper para leer valor de Enum o string ───────────────────
+def val(field, default='—'):
+    if field is None:
         return default
-    return campo.value if hasattr(campo, 'value') else campo
-
+    return field.value if hasattr(field, 'value') else str(field)
 
 # ════════════════════════════════════════════════════════════
 #  CRUD BÁSICO
@@ -71,7 +63,8 @@ def get_preficha_by_folio(folio):
 def update_preficha(preficha_id):
     from app.controllers.preficha_controller import PrefichaController
     data = request.get_json()
-    result, status_code = PrefichaController.update_preficha(preficha_id, data)
+    result, status_code = PrefichaController.update_preficha(
+        preficha_id, data)
     return jsonify(result), status_code
 
 @prefichas_bp.route('/<int:preficha_id>', methods=['DELETE'])
@@ -159,7 +152,6 @@ def descargar_pdf_preficha(folio):
     elementos.append(Paragraph(
         'Centro de Bachillerato Tecnológico Industrial '
         'y de Servicios No. 88', nombre_style))
-    # ✅ Vicente Guerrero
     elementos.append(Paragraph('Vicente Guerrero', nombre_style))
     elementos.append(Paragraph('Tapachula, Chiapas', sub_style))
     elementos.append(Spacer(1, 0.3*cm))
@@ -173,7 +165,6 @@ def descargar_pdf_preficha(folio):
         ])))
     elementos.append(Spacer(1, 0.3*cm))
 
-    # ✅ Título actualizado
     elementos.append(Paragraph(
         'FICHA DE APLICACIÓN DE INSTRUMENTO DIAGNÓSTICO',
         titulo_style))
@@ -183,12 +174,14 @@ def descargar_pdf_preficha(folio):
         folio_style))
     elementos.append(Spacer(1, 0.3*cm))
 
-    if preficha.foto_base64 and ',' in preficha.foto_base64:
+    # ── Foto ──────────────────────────────────────────────────
+    if preficha.foto_base64 and ',' in str(preficha.foto_base64):
         try:
-            _, b64data  = preficha.foto_base64.split(',', 1)
+            _, b64data  = str(preficha.foto_base64).split(',', 1)
             img_bytes   = base64.b64decode(b64data)
             img_stream  = io.BytesIO(img_bytes)
-            foto        = Image(img_stream, width=3*cm, height=3.5*cm)
+            foto        = Image(img_stream,
+                                width=3*cm, height=3.5*cm)
             foto.hAlign = 'CENTER'
             elementos.append(foto)
             elementos.append(Spacer(1, 0.3*cm))
@@ -200,35 +193,39 @@ def descargar_pdf_preficha(folio):
     CREMA  = colors.HexColor('#FDF8F0')
     CREMA2 = colors.HexColor('#F5E6C8')
 
+    # ✅ val() maneja Enum y string automáticamente
     datos = [
         ['I. DATOS PERSONALES', ''],
         ['Nombre completo',
          f"{preficha.nombre or ''} "
          f"{preficha.apellido_paterno or ''} "
          f"{preficha.apellido_materno or ''}"],
-        ['CURP',              preficha.curp or '—'],
+        ['CURP',             preficha.curp or '—'],
         ['Fecha nacimiento',
          str(preficha.fecha_nacimiento)
          if preficha.fecha_nacimiento else '—'],
-        ['Sexo',              _valor_enum_o_str(preficha.sexo)],
+        ['Sexo',             val(preficha.sexo)],
+
         ['II. CONTACTO', ''],
-        ['Correo',            preficha.email    or '—'],
-        ['Teléfono',          preficha.telefono or '—'],
-        ['Domicilio',         preficha.direccion or '—'],
-        ['Nombre del tutor',  preficha.tutor_nombre or '—'],
-        ['Parentesco',        preficha.tutor_parentesco or '—'],
-        ['Tel. tutor',        preficha.tutor_telefono or '—'],
+        ['Correo',           preficha.email    or '—'],
+        ['Teléfono',         preficha.telefono or '—'],
+        ['Domicilio',        preficha.direccion or '—'],
+        ['Nombre del tutor', preficha.tutor_nombre or '—'],
+        ['Parentesco',       preficha.tutor_parentesco or '—'],
+        ['Tel. tutor',       preficha.tutor_telefono or '—'],
+
         ['III. OPCIONES ACADÉMICAS', ''],
-        ['1ª Especialidad',   preficha.especialidad_1 or '—'],
-        ['2ª Especialidad',   preficha.especialidad_2 or '—'],
-        ['3ª Especialidad',   preficha.especialidad_3 or '—'],
-        ['Secundaria',        preficha.secundaria_nombre or '—'],
+        ['1ª Especialidad',  preficha.especialidad_1 or '—'],
+        ['2ª Especialidad',  preficha.especialidad_2 or '—'],
+        ['3ª Especialidad',  preficha.especialidad_3 or '—'],
+        ['Secundaria',       preficha.secundaria_nombre or '—'],
         ['Promedio',
          str(preficha.promedio_egreso)
          if preficha.promedio_egreso else '—'],
+
         ['IV. ESTATUS', ''],
-        ['Status',            _valor_enum_o_str(preficha.status, 'pendiente')],
-        ['Observaciones',     preficha.observaciones or '—'],
+        ['Status',           val(preficha.status, 'pendiente')],
+        ['Observaciones',    preficha.observaciones or '—'],
     ]
 
     secciones_idx = [0, 5, 12, 18]
@@ -274,7 +271,8 @@ def descargar_pdf_preficha(folio):
     doc.build(elementos)
     archivo.seek(0)
     return send_file(
-        archivo, mimetype='application/pdf',
+        archivo,
+        mimetype='application/pdf',
         as_attachment=True,
         download_name=f'ficha_diagnostico_{folio}.pdf')
 
@@ -312,7 +310,6 @@ def descargar_excel_prefichas():
         bottom = Side(style='thin', color='CCCCCC'),
     )
 
-    # Fila 1 — Encabezado institucional
     ws.merge_cells('A1:R1')
     ws['A1'] = 'CBTIS No. 88 — Vicente Guerrero — Tapachula, Chiapas'
     ws['A1'].font      = Font(bold=True, size=14,
@@ -322,7 +319,6 @@ def descargar_excel_prefichas():
                                    vertical='center')
     ws.row_dimensions[1].height = 28
 
-    # Fila 2 — Subtítulo
     ws.merge_cells('A2:R2')
     ws['A2'] = (
         'RELACIÓN DE ASPIRANTES — '
@@ -334,7 +330,6 @@ def descargar_excel_prefichas():
                                    vertical='center')
     ws.row_dimensions[2].height = 16
 
-    # Fila 3 — Total
     ws.merge_cells('A3:R3')
     ws['A3'] = f'Total de aspirantes registrados: {len(prefichas)}'
     ws['A3'].font      = Font(bold=True, size=10,
@@ -344,27 +339,16 @@ def descargar_excel_prefichas():
                                    vertical='center')
     ws.row_dimensions[3].height = 16
 
-    # Fila 4 — Encabezados columnas
-    # ✅ Sin Método Pago ni Pago Confirmado
     columnas = [
-        ('Folio',            14),
-        ('CURP',             22),
-        ('Nombre',           18),
-        ('Apellido Paterno', 18),
-        ('Apellido Materno', 18),
-        ('Nombre Completo',  28),
-        ('Fecha Nacimiento', 16),
-        ('Sexo',              8),
-        ('Teléfono',         14),
-        ('Correo',           28),
-        ('Dirección',        30),
-        ('1ª Especialidad',  22),
-        ('2ª Especialidad',  22),
-        ('3ª Especialidad',  22),
-        ('Secundaria',       24),
-        ('Promedio',         10),
-        ('Status',           14),
-        ('Fecha Registro',   18),
+        ('Folio',            14), ('CURP',             22),
+        ('Nombre',           18), ('Apellido Paterno', 18),
+        ('Apellido Materno', 18), ('Nombre Completo',  28),
+        ('Fecha Nacimiento', 16), ('Sexo',              8),
+        ('Teléfono',         14), ('Correo',           28),
+        ('Dirección',        30), ('1ª Especialidad',  22),
+        ('2ª Especialidad',  22), ('3ª Especialidad',  22),
+        ('Secundaria',       24), ('Promedio',         10),
+        ('Status',           14), ('Fecha Registro',   18),
     ]
 
     for col_idx, (nombre, ancho) in enumerate(columnas, start=1):
@@ -380,12 +364,10 @@ def descargar_excel_prefichas():
             get_column_letter(col_idx)].width = ancho
     ws.row_dimensions[4].height = 22
 
-    # Filas de datos
     for fila_idx, p in enumerate(prefichas, start=5):
         color_fila = GRIS if fila_idx % 2 == 0 else BLANCO
         fill_fila  = PatternFill('solid', fgColor=color_fila)
 
-        # ✅ Sin metodo_pago ni pago_confirmado
         fila_data = [
             p.folio             or '—',
             p.curp              or '—',
@@ -395,7 +377,7 @@ def descargar_excel_prefichas():
             p.nombre_completo   or '—',
             str(p.fecha_nacimiento)
             if p.fecha_nacimiento else '—',
-            _valor_enum_o_str(p.sexo),
+            val(p.sexo),
             p.telefono          or '—',
             p.email             or '—',
             p.direccion         or '—',
@@ -405,7 +387,7 @@ def descargar_excel_prefichas():
             p.secundaria_nombre or '—',
             float(p.promedio_egreso)
             if p.promedio_egreso else '—',
-            _valor_enum_o_str(p.status, 'pendiente'),
+            val(p.status, 'pendiente'),
             str(p.created_at)[:10]
             if p.created_at else '—',
         ]
@@ -451,10 +433,9 @@ def descargar_csv_prefichas():
         Preficha.created_at.desc()).all()
 
     archivo = io.StringIO()
-    archivo.write('\ufeff')  # BOM para Excel de Windows
+    archivo.write('\ufeff')
     writer  = csv.writer(archivo)
 
-    # ✅ Sin Método Pago ni Pago Confirmado
     writer.writerow([
         'Folio', 'CURP', 'Nombre', 'Apellido Paterno',
         'Apellido Materno', 'Nombre Completo',
@@ -474,7 +455,7 @@ def descargar_csv_prefichas():
             p.nombre_completo   or '',
             str(p.fecha_nacimiento)
             if p.fecha_nacimiento else '',
-            _valor_enum_o_str(p.sexo, ''),
+            val(p.sexo, ''),
             p.telefono          or '',
             p.email             or '',
             p.direccion         or '',
@@ -484,7 +465,7 @@ def descargar_csv_prefichas():
             p.secundaria_nombre or '',
             float(p.promedio_egreso)
             if p.promedio_egreso else '',
-            _valor_enum_o_str(p.status, 'pendiente'),
+            val(p.status, 'pendiente'),
             str(p.created_at)[:10]
             if p.created_at else '',
         ])
