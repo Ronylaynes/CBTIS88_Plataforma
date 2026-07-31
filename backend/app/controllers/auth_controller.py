@@ -25,8 +25,10 @@ class AuthController:
             db.session.commit()
             
             # Generate tokens
-            access_token = create_access_token(identity=user.id)
-            refresh_token = create_refresh_token(identity=user.id)
+            # ✅ identity debe ser STRING — Flask-JWT-Extended 4.x rechaza
+            # con error 422 cualquier token cuyo "sub" no sea texto.
+            access_token = create_access_token(identity=str(user.id))
+            refresh_token = create_refresh_token(identity=str(user.id))
             
             return {
                 'message': 'User registered successfully',
@@ -52,8 +54,10 @@ class AuthController:
                 return {'error': 'Account is inactive'}, 401
             
             # Generate tokens
-            access_token = create_access_token(identity=user.id)
-            refresh_token = create_refresh_token(identity=user.id)
+            # ✅ identity debe ser STRING — Flask-JWT-Extended 4.x rechaza
+            # con error 422 cualquier token cuyo "sub" no sea texto.
+            access_token = create_access_token(identity=str(user.id))
+            refresh_token = create_refresh_token(identity=str(user.id))
             
             return {
                 'message': 'Login successful',
@@ -69,7 +73,9 @@ class AuthController:
     def get_current_user(user_id):
         """Get current authenticated user"""
         try:
-            user = User.query.get(user_id)
+            # ✅ get_jwt_identity() ahora devuelve el id como string;
+            # lo convertimos a int para que coincida con la PK de la tabla.
+            user = User.query.get(int(user_id))
             
             if not user:
                 return {'error': 'User not found'}, 404
@@ -83,7 +89,7 @@ class AuthController:
     def change_password(user_id, data):
         """Change user password"""
         try:
-            user = User.query.get(user_id)
+            user = User.query.get(int(user_id))
             
             if not user:
                 return {'error': 'User not found'}, 404
@@ -105,7 +111,7 @@ class AuthController:
     def update_profile(user_id, data):
         """Update user profile"""
         try:
-            user = User.query.get(user_id)
+            user = User.query.get(int(user_id))
             
             if not user:
                 return {'error': 'User not found'}, 404
@@ -116,7 +122,7 @@ class AuthController:
             if 'email' in data:
                 # Check if email is already taken
                 existing_user = User.query.filter_by(email=data['email']).first()
-                if existing_user and existing_user.id != user_id:
+                if existing_user and existing_user.id != user.id:
                     return {'error': 'Email already in use'}, 400
                 user.email = data['email']
             
